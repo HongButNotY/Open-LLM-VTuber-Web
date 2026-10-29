@@ -1,3 +1,5 @@
+> **Fork note:** HongButNotY's desktop-companion branch of [Open-LLM-VTuber-Web](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber-Web) (Open-LLM-VTuber License 1.0, © 2025 Open LLM Vtuber). Changes on this branch: Electron 45 (the prebuilt v1.2.1 app is blocked by macOS because Apple revoked its Electron 31 runtime), random speak-up while screen capture is on, a small subtitle under the character in pet mode, voice volume up to 300% / mic-on-startup / saved pet-size settings, and more reliable pet-mode click-through (clicks pass through empty space; ⌥⇧⌘M toggles click-through-everything). Setup and full credits: [COMPANION_SETUP.md](https://github.com/HongButNotY/Open-LLM-VTuber/blob/companion-features/COMPANION_SETUP.md).
+
 # Open LLM Vtuber
 
 An Electron application with React and TypeScript

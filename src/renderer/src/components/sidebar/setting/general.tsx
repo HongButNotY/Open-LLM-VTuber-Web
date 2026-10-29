@@ -1,12 +1,15 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { useTranslation } from "react-i18next";
+import { useSubtitle } from "@/context/subtitle-context";
 import { Stack, createListCollection } from "@chakra-ui/react";
 import { useBgUrl } from "@/context/bgurl-context";
 import { settingStyles } from "./setting-styles";
 import { useConfig } from "@/context/character-config-context";
 import { useGeneralSettings } from "@/hooks/sidebar/setting/use-general-settings";
 import { useWebSocket } from "@/context/websocket-context";
-import { SelectField, SwitchField, InputField } from "./common";
+import { usePreferences } from "@/context/preferences-context";
+import { useLive2DConfig } from "@/context/live2d-config-context";
+import { SelectField, SwitchField, InputField, SliderField, NumberField } from "./common";
 
 interface GeneralProps {
   onSave?: (callback: () => void) => () => void;
@@ -49,6 +52,13 @@ const useCollections = () => {
 
 function General({ onSave, onCancel }: GeneralProps): JSX.Element {
   const { t, i18n } = useTranslation();
+  const { showPetSubtitle, setShowPetSubtitle } = useSubtitle();
+  const {
+    volume, setVolume, petScales, setPetScale,
+  } = usePreferences();
+  const { modelInfo } = useLive2DConfig();
+  const modelUrl = modelInfo?.url;
+  const petSizePercent = Math.round((modelUrl && petScales[modelUrl] ? petScales[modelUrl] : 1) * 100);
   const bgUrlContext = useBgUrl();
   const { confName, setConfName } = useConfig();
   const { wsUrl, setWsUrl, baseUrl, setBaseUrl } = useWebSocket();
@@ -98,6 +108,38 @@ function General({ onSave, onCancel }: GeneralProps): JSX.Element {
         checked={showSubtitle}
         onChange={setShowSubtitle}
       />
+
+      <SliderField
+        label={t("settings.general.volume")}
+        value={volume}
+        onChange={setVolume}
+        max={300}
+        step={5}
+        unit="%"
+        help={t("settings.general.volumeDesc")}
+      />
+
+      <SwitchField
+        label={t("settings.general.showPetSubtitle")}
+        checked={showPetSubtitle}
+        onChange={setShowPetSubtitle}
+      />
+
+      {modelUrl && (
+        <NumberField
+          label={t("settings.general.petModelSize")}
+          help={t("settings.general.petModelSizeDesc")}
+          value={petSizePercent}
+          onChange={(value) => {
+            const percent = Number(value);
+            if (Number.isNaN(percent) || percent <= 0) return;
+            setPetScale(modelUrl, percent === 100 ? null : percent / 100);
+          }}
+          min={10}
+          max={400}
+          step={5}
+        />
+      )}
 
       {!settings.useCameraBackground && (
         <>

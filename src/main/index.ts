@@ -2,7 +2,7 @@
 import { app, ipcMain, globalShortcut, desktopCapturer } from "electron";
 import { electronApp, optimizer } from "@electron-toolkit/utils";
 import { WindowManager } from "./window-manager";
-import { MenuManager } from "./menu-manager";
+import { MenuManager, PASSTHROUGH_SHORTCUT } from "./menu-manager";
 
 let windowManager: WindowManager;
 let menuManager: MenuManager;
@@ -110,6 +110,13 @@ app.whenReady().then(() => {
   }
 
   setupIPC();
+
+  // Way back out of "click through everything", since the character can't be clicked while it's on.
+  globalShortcut.register(PASSTHROUGH_SHORTCUT, () => {
+    if (windowManager.getCurrentMode() === "pet") {
+      windowManager.toggleForceIgnoreMouse();
+    }
+  });
 
   app.on("activate", () => {
     const window = windowManager.getWindow();

@@ -19,10 +19,13 @@ import { VADProvider } from "./context/vad-context";
 import { Live2D } from "./components/canvas/live2d";
 import TitleBar from "./components/electron/title-bar";
 import { InputSubtitle } from "./components/electron/input-subtitle";
+import { PetSubtitle } from "./components/electron/pet-subtitle";
 import { ProactiveSpeakProvider } from "./context/proactive-speak-context";
 import { ScreenCaptureProvider } from "./context/screen-capture-context";
 import { GroupProvider } from "./context/group-context";
 import { BrowserProvider } from "./context/browser-context";
+import { PreferencesProvider } from "./context/preferences-context";
+import { usePetMousePassthrough } from "./hooks/electron/use-pet-mouse-passthrough";
 // eslint-disable-next-line import/no-extraneous-dependencies, import/newline-after-import
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import Background from "./components/canvas/background";
@@ -34,6 +37,7 @@ function AppContent(): JSX.Element {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
   const { mode } = useMode();
+  usePetMousePassthrough();
   const isElectron = window.api !== undefined;
   const live2dContainerRef = useRef<HTMLDivElement>(null);
 
@@ -151,6 +155,7 @@ function AppContent(): JSX.Element {
 
       {/* Conditional Rendering of Pet Mode UI */}
       {mode === "pet" && <InputSubtitle />}
+      {mode === "pet" && <PetSubtitle />}
     </>
   );
 }
@@ -169,7 +174,7 @@ function App(): JSX.Element {
 // New component to access mode for global styles
 function AppWithGlobalStyles(): JSX.Element {
   return (
-    <>
+    <PreferencesProvider>
       <CameraProvider>
         <ScreenCaptureProvider>
           <CharacterConfigProvider>
@@ -198,7 +203,7 @@ function AppWithGlobalStyles(): JSX.Element {
           </CharacterConfigProvider>
         </ScreenCaptureProvider>
       </CameraProvider>
-    </>
+    </PreferencesProvider>
   );
 }
 

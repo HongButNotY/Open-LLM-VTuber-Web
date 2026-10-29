@@ -4,11 +4,16 @@ import {
 import { useLocalStorage } from '@/hooks/utils/use-local-storage';
 import { useTriggerSpeak } from '@/hooks/utils/use-trigger-speak';
 import { useAiState, AiStateEnum } from '@/context/ai-state-context';
+import { useScreenCaptureContext } from '@/context/screen-capture-context';
 
 interface ProactiveSpeakSettings {
   allowButtonTrigger: boolean;
   allowProactiveSpeak: boolean
   idleSecondsToSpeak: number
+  // While screen capture is on, speak up on its own at random times.
+  randomSpeakOnScreenShare: boolean
+  randomMinMinutes: number
+  randomMaxMinutes: number
 }
 
 interface ProactiveSpeakContextType {
@@ -16,25 +21,50 @@ interface ProactiveSpeakContextType {
   updateSettings: (newSettings: ProactiveSpeakSettings) => void
 }
 
-const defaultSettings: ProactiveSpeakSettings = {
+export const defaultProactiveSpeakSettings: ProactiveSpeakSettings = {
   allowProactiveSpeak: false,
   idleSecondsToSpeak: 5,
   allowButtonTrigger: false,
+  randomSpeakOnScreenShare: true,
+  randomMinMinutes: 0.5,
+  randomMaxMinutes: 8,
 };
+
+// First remark after screen capture starts comes quickly, so it's clear it works.
+const FIRST_REMARK_SECONDS: [number, number] = [20, 45];
+
+function randomSeconds(min: number, max: number): number {
+  const lo = Math.max(0, Math.min(min, max));
+  const hi = Math.max(min, max);
+  return lo + Math.random() * (hi - lo);
+}
 
 export const ProactiveSpeakContext = createContext<ProactiveSpeakContextType | null>(null);
 
 export function ProactiveSpeakProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useLocalStorage<ProactiveSpeakSettings>(
+  const [storedSettings, setSettings] = useLocalStorage<ProactiveSpeakSettings>(
     'proactiveSpeakSettings',
-    defaultSettings,
+    defaultProactiveSpeakSettings,
+  );
+  // Older saved settings don't have the random-speak fields yet.
+  const settings = useMemo(
+    () => ({ ...defaultProactiveSpeakSettings, ...storedSettings }),
+    [storedSettings],
   );
 
   const { aiState } = useAiState();
   const { sendTriggerSignal } = useTriggerSpeak();
+  const { isStreaming: isScreenSharing } = useScreenCaptureContext();
 
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const idleStartTimeRef = useRef<number | null>(null);
+  const hasSpokenThisShareRef = useRef(false);
+
+  const randomMode = settings.randomSpeakOnScreenShare && isScreenSharing;
+
+  useEffect(() => {
+    if (!isScreenSharing) hasSpokenThisShareRef.current = false;
+  }, [isScreenSharing]);
 
   const clearIdleTimer = useCallback(() => {
     if (idleTimerRef.current) {
@@ -47,14 +77,33 @@ export function ProactiveSpeakProvider({ children }: { children: ReactNode }) {
   const startIdleTimer = useCallback(() => {
     clearIdleTimer();
 
-    if (!settings.allowProactiveSpeak) return;
+    let delaySeconds: number;
+    if (randomMode) {
+      delaySeconds = hasSpokenThisShareRef.current
+        ? randomSeconds(settings.randomMinMinutes * 60, settings.randomMaxMinutes * 60)
+        : randomSeconds(...FIRST_REMARK_SECONDS);
+    } else if (settings.allowProactiveSpeak) {
+      delaySeconds = settings.idleSecondsToSpeak;
+    } else {
+      return;
+    }
 
     idleStartTimeRef.current = Date.now();
     idleTimerRef.current = setTimeout(() => {
       const actualIdleTime = (Date.now() - idleStartTimeRef.current!) / 1000;
+      if (randomMode) hasSpokenThisShareRef.current = true;
+      // Captures a fresh screenshot (and camera frame, if on) and sends it with the signal.
       sendTriggerSignal(actualIdleTime);
-    }, settings.idleSecondsToSpeak * 1000);
-  }, [settings.allowProactiveSpeak, settings.idleSecondsToSpeak, sendTriggerSignal, clearIdleTimer]);
+    }, delaySeconds * 1000);
+  }, [
+    randomMode,
+    settings.randomMinMinutes,
+    settings.randomMaxMinutes,
+    settings.allowProactiveSpeak,
+    settings.idleSecondsToSpeak,
+    sendTriggerSignal,
+    clearIdleTimer,
+  ]);
 
   useEffect(() => {
     if (aiState === AiStateEnum.IDLE) {

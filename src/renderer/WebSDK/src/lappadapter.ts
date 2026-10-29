@@ -13,6 +13,9 @@ import {
   InvalidMotionQueueEntryHandleValue
 } from '@framework/motion/cubismmotionqueuemanager';
 import { CubismFramework } from '@framework/live2dcubismframework';
+import { CubismMatrix44 } from '@framework/math/cubismmatrix44';
+import { LAppDelegate } from './lappdelegate';
+import { canvas } from './lappglmanager';
 import { deprecate } from "util";
 
 export let s_adapter_instance : LAppAdapter | null | undefined = null;
@@ -122,6 +125,52 @@ export class LAppAdapter {
       // Set the matrix
       model._modelMatrix.setMatrix(newMatrix);
     }
+  }
+
+  /**
+   * Bounding box of the visible model on the page, in CSS pixels.
+   * Mirrors the projection built in LAppLive2DManager.onUpdate, then maps
+   * every visible drawable vertex from model space to the canvas.
+   */
+  public getModelScreenBounds(): { left: number, right: number, top: number, bottom: number } | null {
+    const model = this.getModel();
+    const coreModel = model?.getModel();
+    const view = LAppDelegate.getInstance().getView();
+    if (!model || !coreModel || !canvas || !view?._viewMatrix) return null;
+
+    const { width, height } = canvas;
+    const projection = new CubismMatrix44();
+    if (coreModel.getCanvasWidth() > 1.0 && width < height) {
+      projection.scale(1.0, width / height);
+    } else {
+      projection.scale(height / width, 1.0);
+    }
+    projection.multiplyByMatrix(view._viewMatrix);
+    projection.multiplyByMatrix(model.getModelMatrix());
+
+    let minX = Infinity; let maxX = -Infinity; let minY = Infinity; let maxY = -Infinity;
+    for (let i = 0; i < coreModel.getDrawableCount(); i++) {
+      if (!coreModel.getDrawableDynamicFlagIsVisible(i) || coreModel.getDrawableOpacity(i) <= 0) continue;
+      const vertices = coreModel.getDrawableVertices(i);
+      for (let v = 0; v < vertices.length; v += 2) {
+        const x = projection.transformX(vertices[v]);
+        const y = projection.transformY(vertices[v + 1]);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    if (!Number.isFinite(minX)) return null;
+
+    // Clip space (-1..1, y up) to CSS pixels.
+    const rect = canvas.getBoundingClientRect();
+    return {
+      left: rect.left + ((minX + 1) / 2) * rect.width,
+      right: rect.left + ((maxX + 1) / 2) * rect.width,
+      top: rect.top + ((1 - maxY) / 2) * rect.height,
+      bottom: rect.top + ((1 - minY) / 2) * rect.height,
+    };
   }
 
   // private _live2DMgr: LAppLive2DManager;

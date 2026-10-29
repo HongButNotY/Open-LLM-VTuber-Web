@@ -6,6 +6,7 @@ import {
 import { HiQuestionMarkCircle } from 'react-icons/hi';
 import { Field } from '@/components/ui/field';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
   SelectContent,
@@ -77,6 +78,17 @@ interface SwitchFieldProps {
   label: string
   checked: boolean
   onChange: (checked: boolean) => void
+  help?: string
+}
+
+interface SliderFieldProps {
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  step?: number
+  unit?: string
   help?: string
 }
 
@@ -197,6 +209,45 @@ export function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
+    </Field>
+  );
+}
+
+export function SliderField({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 100,
+  step = 1,
+  unit = '',
+  help,
+}: SliderFieldProps): JSX.Element {
+  return (
+    <Field
+      {...settingStyles.common.field}
+      label={
+        <Flex align="center">
+          <Text {...settingStyles.common.fieldLabel}>{label}</Text>
+          {help && <HelpIcon content={help} />}
+        </Flex>
+      }
+    >
+      <Flex align="center" gap="3" width="160px">
+        <Slider
+          flex="1"
+          size="sm"
+          colorPalette="blue"
+          min={min}
+          max={max}
+          step={step}
+          value={[value]}
+          onValueChange={(details) => onChange(details.value[0])}
+        />
+        <Text {...settingStyles.common.fieldLabel} minW="40px" textAlign="right">
+          {`${value}${unit}`}
+        </Text>
+      </Flex>
     </Field>
   );
 }

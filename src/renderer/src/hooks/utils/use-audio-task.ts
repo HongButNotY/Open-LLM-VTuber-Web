@@ -11,10 +11,48 @@ import { toaster } from '@/components/ui/toaster';
 import { useWebSocket } from '@/context/websocket-context';
 import { DisplayText } from '@/services/websocket-service';
 import { useLive2DExpression } from '@/hooks/canvas/use-live2d-expression';
+import { usePreferences } from '@/context/preferences-context';
 import * as LAppDefine from '../../../WebSDK/src/lappdefine';
 
 // Simple type alias for Live2D model
 type Live2DModel = any;
+
+// Shared audio graph so the voice can be boosted above 100%
+// (an <audio> element's own volume stops at 100%).
+let voiceAudioContext: AudioContext | null = null;
+
+/**
+ * Route an audio element through a gain node and return it.
+ * Returns null if Web Audio isn't available; the caller then falls back to audio.volume.
+ */
+function createVoiceGain(audio: HTMLAudioElement): GainNode | null {
+  try {
+    voiceAudioContext ??= new AudioContext();
+    // A suspended context would play nothing; use plain volume this time and wake it for next time.
+    if (voiceAudioContext.state !== 'running') {
+      voiceAudioContext.resume();
+      return null;
+    }
+    const source = voiceAudioContext.createMediaElementSource(audio);
+    const gain = voiceAudioContext.createGain();
+    source.connect(gain).connect(voiceAudioContext.destination);
+    return gain;
+  } catch (error) {
+    console.warn('Volume boost unavailable, using normal volume:', error);
+    return null;
+  }
+}
+
+/** Apply a 0-300% volume to the voice, using the gain node when there is one. */
+function applyVoiceVolume(audio: HTMLAudioElement, gain: GainNode | null, percent: number) {
+  const level = Math.max(0, percent) / 100;
+  if (gain) {
+    audio.volume = 1;
+    gain.gain.value = level;
+  } else {
+    audio.volume = Math.min(1, level);
+  }
+}
 
 interface AudioTaskOptions {
   audioBase64: string
@@ -36,6 +74,9 @@ export const useAudioTask = () => {
   const { appendResponse, appendAIMessage } = useChatHistory();
   const { sendMessage } = useWebSocket();
   const { setExpression } = useLive2DExpression();
+  const { volume } = usePreferences();
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   // State refs to avoid stale closures
   const stateRef = useRef({
@@ -47,6 +88,7 @@ export const useAudioTask = () => {
 
   // Track current audio and model
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const currentGainRef = useRef<GainNode | null>(null);
   const currentModelRef = useRef<Live2DModel | null>(null);
 
   stateRef.current = {
@@ -55,6 +97,13 @@ export const useAudioTask = () => {
     appendResponse,
     appendAIMessage,
   };
+
+  // Apply volume changes to the line being spoken right now, too.
+  useEffect(() => {
+    if (currentAudioRef.current) {
+      applyVoiceVolume(currentAudioRef.current, currentGainRef.current, volume);
+    }
+  }, [volume]);
 
   /**
    * Stop current audio playback and lip sync
@@ -182,7 +231,10 @@ export const useAudioTask = () => {
 
         // Setup audio element
         const audio = new Audio(audioDataUrl);
+        const gain = createVoiceGain(audio);
+        applyVoiceVolume(audio, gain, volumeRef.current);
         currentAudioRef.current = audio;
+        currentGainRef.current = gain;
         let isFinished = false;
 
         const cleanup = () => {

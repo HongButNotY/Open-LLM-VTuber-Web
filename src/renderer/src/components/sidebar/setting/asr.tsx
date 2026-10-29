@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { settingStyles } from './setting-styles';
 import { useASRSettings } from '@/hooks/sidebar/setting/use-asr-settings';
+import { usePreferences } from '@/context/preferences-context';
 import { SwitchField, NumberField } from './common';
 
 interface ASRProps {
@@ -14,6 +15,7 @@ interface ASRProps {
 
 function ASR({ onSave, onCancel }: ASRProps): JSX.Element {
   const { t } = useTranslation();
+  const { micOnStartup, setMicOnStartup } = usePreferences();
   const {
     localSettings,
     autoStopMic,
@@ -41,6 +43,13 @@ function ASR({ onSave, onCancel }: ASRProps): JSX.Element {
 
   return (
     <Stack {...settingStyles.common.container}>
+      <SwitchField
+        label={t('settings.asr.micOnStartup')}
+        help={t('settings.asr.micOnStartupDesc')}
+        checked={micOnStartup}
+        onChange={setMicOnStartup}
+      />
+
       <SwitchField
         label={t('settings.asr.autoStopMic')}
         checked={autoStopMic}

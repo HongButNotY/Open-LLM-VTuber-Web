@@ -5,6 +5,9 @@ import {
 // @ts-expect-error
 import trayIcon from '../../resources/icon.png?asset';
 
+// Toggles "click through everything" from anywhere (it also works when the character can't be clicked).
+export const PASSTHROUGH_SHORTCUT = 'CommandOrControl+Shift+Alt+M';
+
 export interface ConfigFile {
   filename: string;
   name: string;
@@ -65,7 +68,8 @@ export class MenuManager {
       ...(this.currentMode === 'pet'
         ? [
           {
-            label: 'Toggle Mouse Passthrough',
+            label: 'Click Through Everything (character too)',
+            accelerator: PASSTHROUGH_SHORTCUT,
             click: () => {
               const windows = BrowserWindow.getAllWindows();
               windows.forEach((window) => {
@@ -125,7 +129,8 @@ export class MenuManager {
       ...(this.currentMode === 'pet'
         ? [
           {
-            label: 'Toggle Mouse Passthrough',
+            label: 'Click Through Everything (character too)',
+            accelerator: PASSTHROUGH_SHORTCUT,
             click: () => {
               event.sender.send('toggle-force-ignore-mouse');
             },

@@ -16,6 +16,7 @@ import { useConfig } from '@/context/character-config-context';
 import { useChatHistory } from '@/context/chat-history-context';
 import { toaster } from '@/components/ui/toaster';
 import { useVAD } from '@/context/vad-context';
+import { usePreferences } from '@/context/preferences-context';
 import { AiState, useAiState } from "@/context/ai-state-context";
 import { useLocalStorage } from '@/hooks/utils/use-local-storage';
 import { useGroup } from '@/context/group-context';
@@ -38,6 +39,9 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
   const { setSelfUid, setGroupMembers, setIsOwner } = useGroup();
   const { startMic, stopMic, autoStartMicOnConvEnd } = useVAD();
   const autoStartMicOnConvEndRef = useRef(autoStartMicOnConvEnd);
+  const { micOnStartup } = usePreferences();
+  const micOnStartupRef = useRef(micOnStartup);
+  micOnStartupRef.current = micOnStartup;
   const { interrupt } = useInterrupt();
   const { setBrowserViewData } = useBrowser();
 
@@ -59,6 +63,11 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
   const handleControlMessage = useCallback((controlText: string) => {
     switch (controlText) {
       case 'start-mic':
+        // The server sends this once it connects; respect the "mic on when the app opens" setting.
+        if (!micOnStartupRef.current) {
+          console.log('Mic stays off on startup (setting)');
+          break;
+        }
         console.log('Starting microphone...');
         startMic();
         break;

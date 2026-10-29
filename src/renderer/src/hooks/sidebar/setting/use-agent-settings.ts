@@ -13,6 +13,9 @@ export function useAgentSettings({ onSave, onCancel }: UseAgentSettingsProps = {
     allowProactiveSpeak: persistedSettings.allowProactiveSpeak,
     idleSecondsToSpeak: persistedSettings.idleSecondsToSpeak,
     allowButtonTrigger: persistedSettings.allowButtonTrigger,
+    randomSpeakOnScreenShare: persistedSettings.randomSpeakOnScreenShare,
+    randomMinMinutes: persistedSettings.randomMinMinutes,
+    randomMaxMinutes: persistedSettings.randomMaxMinutes,
   });
 
   const [originalSettings, setOriginalSettings] = useState({
@@ -47,6 +50,27 @@ export function useAgentSettings({ onSave, onCancel }: UseAgentSettingsProps = {
     }));
   }, []);
 
+  const handleRandomSpeakChange = useCallback((checked: boolean) => {
+    setTempSettings((prev) => ({
+      ...prev,
+      randomSpeakOnScreenShare: checked,
+    }));
+  }, []);
+
+  const handleRandomMinChange = useCallback((value: number) => {
+    setTempSettings((prev) => ({
+      ...prev,
+      randomMinMinutes: value,
+    }));
+  }, []);
+
+  const handleRandomMaxChange = useCallback((value: number) => {
+    setTempSettings((prev) => ({
+      ...prev,
+      randomMaxMinutes: value,
+    }));
+  }, []);
+
   const handleSave = useCallback(() => {
     updateSettings(tempSettings);
     setOriginalSettings(tempSettings);
@@ -74,5 +98,8 @@ export function useAgentSettings({ onSave, onCancel }: UseAgentSettingsProps = {
     handleAllowProactiveSpeakChange,
     handleIdleSecondsChange,
     handleAllowButtonTriggerChange,
+    handleRandomSpeakChange,
+    handleRandomMinChange,
+    handleRandomMaxChange,
   };
 }
