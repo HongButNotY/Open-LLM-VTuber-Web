@@ -5,6 +5,8 @@ import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 
 const isMac = process.platform === 'darwin';
+// How often pet mode checks what is under the cursor
+const PET_CURSOR_POLL_MS = 80;
 
 export class WindowManager {
   private window: BrowserWindow | null = null;
@@ -16,7 +18,10 @@ export class WindowManager {
     height: number;
   } | null = null;
 
-  private hoveringComponents: Set<string> = new Set();
+  // Pet mode: whether the cursor is over something clickable (her, or a panel)
+  private petInteractive = false;
+
+  private petCursorTimer: NodeJS.Timeout | null = null;
 
   private currentMode: 'window' | 'pet' = 'window';
 
@@ -50,6 +55,12 @@ export class WindowManager {
     // Handle toggle force ignore mouse events from renderer
     ipcMain.on('toggle-force-ignore-mouse', () => {
       this.toggleForceIgnoreMouse();
+    });
+
+    // Renderer reports whether the cursor is over her or a panel
+    ipcMain.on('set-pet-interactive', (_event, interactive: boolean) => {
+      this.petInteractive = interactive;
+      this.applyPetMouse();
     });
   }
 
@@ -155,6 +166,7 @@ export class WindowManager {
   private setWindowModeWindow(): void {
     if (!this.window) return;
 
+    this.stopPetCursorWatch();
     this.window.setAlwaysOnTop(false);
     this.window.setIgnoreMouseEvents(false);
     this.window.setSkipTaskbar(false);
@@ -217,13 +229,13 @@ export class WindowManager {
     this.window.setFocusable(false);
 
     if (isMac) {
-      this.window.setIgnoreMouseEvents(true);
       this.window.setVisibleOnAllWorkspaces(true, {
         visibleOnFullScreen: true,
       });
-    } else {
-      this.window.setIgnoreMouseEvents(true, { forward: true });
     }
+    this.petInteractive = false;
+    this.applyPetMouse();
+    this.startPetCursorWatch();
 
     this.window.webContents.send('mode-changed', 'pet');
   }
@@ -269,51 +281,46 @@ export class WindowManager {
     return bounds.width >= width && bounds.height >= height;
   }
 
-  updateComponentHover(componentId: string, isHovering: boolean): void {
-    if (this.currentMode === 'window') return;
+  // Kept for older renderer code; pet mode now decides from what is under the cursor.
+  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
+  updateComponentHover(_componentId: string, _isHovering: boolean): void {}
 
-    // If force ignore is enabled, don't change the mouse ignore state
-    if (this.forceIgnoreMouse) return;
-
-    if (isHovering) {
-      this.hoveringComponents.add(componentId);
-    } else {
-      this.hoveringComponents.delete(componentId);
-    }
-
-    if (this.window) {
-      const shouldIgnore = this.hoveringComponents.size === 0;
-      if (isMac) {
-        this.window.setIgnoreMouseEvents(shouldIgnore);
-      } else {
-        this.window.setIgnoreMouseEvents(shouldIgnore, { forward: true });
-      }
-      if (!shouldIgnore) {
-        this.window.setFocusable(true);
-      }
-    }
+  /**
+   * Pet mode: let clicks through everywhere except on her and on open panels.
+   * Mouse moves are always forwarded, so the page keeps seeing the cursor.
+   */
+  private applyPetMouse(): void {
+    if (!this.window || this.currentMode !== 'pet') return;
+    const ignore = this.forceIgnoreMouse || !this.petInteractive;
+    this.window.setIgnoreMouseEvents(ignore, { forward: true });
+    if (!ignore) this.window.setFocusable(true);
   }
 
-  // Toggle force ignore mouse events
+  /**
+   * Ask the page what is under the cursor several times a second. This keeps
+   * click-through correct even when the page misses mouse events (which used to
+   * leave the whole screen unclickable).
+   */
+  private startPetCursorWatch(): void {
+    this.stopPetCursorWatch();
+    this.petCursorTimer = setInterval(() => {
+      const win = this.window;
+      if (!win || win.isDestroyed() || !win.isVisible()) return;
+      const cursor = screen.getCursorScreenPoint();
+      const bounds = win.getContentBounds();
+      win.webContents.send('pet-cursor', { x: cursor.x - bounds.x, y: cursor.y - bounds.y });
+    }, PET_CURSOR_POLL_MS);
+  }
+
+  private stopPetCursorWatch(): void {
+    if (this.petCursorTimer) clearInterval(this.petCursorTimer);
+    this.petCursorTimer = null;
+  }
+
+  // Toggle "click through everything" (she can't be clicked either)
   toggleForceIgnoreMouse(): void {
     this.forceIgnoreMouse = !this.forceIgnoreMouse;
-
-    // Apply the new setting immediately
-    if (this.forceIgnoreMouse) {
-      if (isMac) {
-        this.window?.setIgnoreMouseEvents(true);
-      } else {
-        this.window?.setIgnoreMouseEvents(true, { forward: true });
-      }
-    } else {
-      // Reapply normal behavior based on hovering components
-      const shouldIgnore = this.hoveringComponents.size === 0;
-      if (isMac) {
-        this.window?.setIgnoreMouseEvents(shouldIgnore);
-      } else {
-        this.window?.setIgnoreMouseEvents(shouldIgnore, { forward: true });
-      }
-    }
+    this.applyPetMouse();
 
     // Notify renderer about the change
     this.window?.webContents.send('force-ignore-mouse-changed', this.forceIgnoreMouse);

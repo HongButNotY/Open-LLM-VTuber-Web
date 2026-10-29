@@ -6,6 +6,7 @@ import { ModelInfo } from '@/context/live2d-config-context';
 import { LAppDelegate } from '../../../WebSDK/src/lappdelegate';
 import { LAppLive2DManager } from '../../../WebSDK/src/lapplive2dmanager';
 import { useMode } from '@/context/mode-context';
+import { usePreferences } from '@/context/preferences-context';
 
 // Constants for model scaling behavior
 const MIN_SCALE = 0.1;
@@ -13,6 +14,8 @@ const MAX_SCALE = 5.0;
 const EASING_FACTOR = 0.3; // Controls animation smoothness
 const WHEEL_SCALE_STEP = 0.03; // Scale change per wheel tick
 const DEFAULT_SCALE = 1.0; // Default scale if not specified
+const PET_SCALE_SAVE_DELAY_MS = 400; // Wait for scrolling to stop before saving the pet size
+const PET_SCALE_POLL_MS = 300; // How often to check whether a (re)loaded model needs the pet size
 
 interface UseLive2DResizeProps {
   containerRef: RefObject<HTMLDivElement>;
@@ -50,6 +53,9 @@ export const useLive2DResize = ({
 }: UseLive2DResizeProps) => {
   const { mode } = useMode();
   const isPet = mode === 'pet';
+  const { petScales, setPetScale } = usePreferences();
+  const savedPetRatio = modelInfo?.url ? petScales[modelInfo.url] : undefined;
+  const petSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isResizingRef = useRef<boolean>(false);
@@ -128,11 +134,21 @@ export const useLive2DResize = ({
 
     targetScaleRef.current = newTargetScale;
 
+    // In pet mode, remember the size she was scrolled to.
+    if (isPet && modelInfo?.url) {
+      const url = modelInfo.url;
+      const baseScale = modelInfo.kScale || DEFAULT_SCALE;
+      if (petSaveTimerRef.current) clearTimeout(petSaveTimerRef.current);
+      petSaveTimerRef.current = setTimeout(() => {
+        setPetScale(url, Math.round((newTargetScale / baseScale) * 100) / 100);
+      }, PET_SCALE_SAVE_DELAY_MS);
+    }
+
     if (!isAnimatingRef.current) {
       isAnimatingRef.current = true;
       animationFrameRef.current = requestAnimationFrame(animateEase);
     }
-  }, [modelInfo?.scrollToResize, animateEase]);
+  }, [modelInfo?.scrollToResize, modelInfo?.url, modelInfo?.kScale, isPet, setPetScale, animateEase]);
 
   /**
    * Pre-process container resize
@@ -236,8 +252,41 @@ export const useLive2DResize = ({
     return undefined;
   }, [handleWheel, canvasRef]);
 
+  /**
+   * Pet mode: show her at the saved size, including after the model reloads.
+   * Leaving pet mode puts her back to the model's default size.
+   */
+  useEffect(() => {
+    const baseScale = modelInfo?.kScale || DEFAULT_SCALE;
+    const setScaleNow = (scale: number) => {
+      lastScaleRef.current = scale;
+      targetScaleRef.current = scale;
+      applyScale(scale);
+    };
+
+    if (!isPet || savedPetRatio === undefined) {
+      if (Math.abs(lastScaleRef.current - baseScale) > 1e-6) setScaleNow(baseScale);
+      return undefined;
+    }
+
+    const petScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, baseScale * savedPetRatio));
+    let appliedTo: unknown = null;
+    const check = () => {
+      const model = LAppLive2DManager.getInstance()?.getModel(0);
+      // Wait until the layout is set up, so it can't overwrite the size afterwards.
+      // @ts-ignore
+      if (!model || !model._initialized || !model._modelMatrix || model === appliedTo) return;
+      appliedTo = model;
+      setScaleNow(petScale);
+    };
+    check();
+    const timer = setInterval(check, PET_SCALE_POLL_MS);
+    return () => clearInterval(timer);
+  }, [isPet, savedPetRatio, modelInfo?.url, modelInfo?.kScale]);
+
   // Clean up animations on unmount
   useEffect(() => () => {
+    if (petSaveTimerRef.current) clearTimeout(petSaveTimerRef.current);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = undefined;

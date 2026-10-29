@@ -311,26 +311,6 @@ export const useLive2DModel = ({
     }
     // --- End Continue Drag Logic ---
 
-    // --- Pet Hover Logic (Unchanged) ---
-    if (isPet && !isDragging && !isPotentialTapRef.current && electronApi && adapter && view && model && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const scale = canvas.width / canvas.clientWidth;
-      const scaledX = x * scale;
-      const scaledY = y * scale;
-      const modelX = view._deviceToScreen.transformX(scaledX);
-      const modelY = view._deviceToScreen.transformY(scaledY);
-
-      const currentHitState = model.anyhitTest(modelX, modelY) !== null || model.isHitOnModel(modelX, modelY);
-
-      if (currentHitState !== isHoveringModelRef.current) {
-        isHoveringModelRef.current = currentHitState;
-        electronApi.ipcRenderer.send('update-component-hover', 'live2d-model', currentHitState);
-      }
-    }
-    // --- End Pet Hover Logic ---
   }, [isPet, isDragging, electronApi, canvasRef]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
@@ -392,11 +372,6 @@ export const useLive2DModel = ({
     // Reset potential tap if mouse leaves before mouse up
     if (isPotentialTapRef.current) {
       isPotentialTapRef.current = false;
-    }
-    // --- Pet Hover Logic (Unchanged) ---
-    if (isPet && electronApi && isHoveringModelRef.current) {
-      isHoveringModelRef.current = false;
-      electronApi.ipcRenderer.send('update-component-hover', 'live2d-model', false);
     }
   }, [isPet, isDragging, electronApi, handleMouseUp]);
 

@@ -29,7 +29,10 @@
       "imageCompressionQualityPlaceholder": "Enter compression quality (0-100)",
       "imageMaxWidth": "Image Max Width",
       "imageMaxWidthPlaceholder": "Enter maximum width in pixels",
-      "showPetSubtitle": "Small subtitle under her in pet mode"
+      "showPetSubtitle": "Small subtitle under her in pet mode",
+      "volume": "Voice volume",
+      "petModelSize": "Her size in pet mode (%)",
+      "petModelSizeDesc": "100% is the model's normal size. Scrolling on her in pet mode also changes this, and it is saved for next time."
     },
     "live2d": {
       "pointerInteractive": "Pointer Interactive",
@@ -47,7 +50,9 @@
       "negativeSpeechThreshold": "Negative Speech Threshold",
       "negativeSpeechThresholdDesc": "Confidence level (0-100) below which speech detection stops. Lower values make detection less sensitive",
       "redemptionFrames": "Redemption Frames",
-      "redemptionFramesDesc": "Number of consecutive frames (1-100) needed to confirm speech detection. Higher values reduce noise triggers"
+      "redemptionFramesDesc": "Number of consecutive frames (1-100) needed to confirm speech detection. Higher values reduce noise triggers",
+      "micOnStartup": "Mic on when the app opens",
+      "micOnStartupDesc": "Turn the microphone on automatically when the app connects. Turn this off to start with the mic muted."
     },
     "agent": {
       "allowProactiveSpeak": "Allow AI to Speak Proactively",

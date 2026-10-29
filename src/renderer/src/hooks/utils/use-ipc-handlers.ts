@@ -5,6 +5,7 @@ import { useLive2DConfig } from "@/context/live2d-config-context";
 import { useSwitchCharacter } from "@/hooks/utils/use-switch-character";
 import { useForceIgnoreMouse } from "@/hooks/utils/use-force-ignore-mouse";
 import { useMode } from "@/context/mode-context";
+import { toaster } from "@/components/ui/toaster";
 
 export function useIpcHandlers() {
   const { handleMicToggle } = useMicToggle();
@@ -44,6 +45,13 @@ export function useIpcHandlers() {
     (_event: Electron.IpcRendererEvent, isForced: boolean) => {
       console.log("Force ignore mouse changed:", isForced);
       setForceIgnoreMouse(isForced);
+      toaster.create({
+        title: isForced
+          ? "Click-through on: she can't be clicked. Press ⌥⇧⌘M (Ctrl+Alt+Shift+M) to turn it off."
+          : "Click-through off: you can click her again.",
+        type: "info",
+        duration: 4000,
+      });
     },
     [setForceIgnoreMouse],
   );

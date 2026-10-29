@@ -11,6 +11,7 @@ import { toaster } from '@/components/ui/toaster';
 import { useWebSocket } from '@/context/websocket-context';
 import { DisplayText } from '@/services/websocket-service';
 import { useLive2DExpression } from '@/hooks/canvas/use-live2d-expression';
+import { usePreferences } from '@/context/preferences-context';
 import * as LAppDefine from '../../../WebSDK/src/lappdefine';
 
 // Simple type alias for Live2D model
@@ -36,6 +37,9 @@ export const useAudioTask = () => {
   const { appendResponse, appendAIMessage } = useChatHistory();
   const { sendMessage } = useWebSocket();
   const { setExpression } = useLive2DExpression();
+  const { volume } = usePreferences();
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   // State refs to avoid stale closures
   const stateRef = useRef({
@@ -55,6 +59,11 @@ export const useAudioTask = () => {
     appendResponse,
     appendAIMessage,
   };
+
+  // Apply volume changes to the line she's saying right now, too.
+  useEffect(() => {
+    if (currentAudioRef.current) currentAudioRef.current.volume = volume / 100;
+  }, [volume]);
 
   /**
    * Stop current audio playback and lip sync
@@ -182,6 +191,7 @@ export const useAudioTask = () => {
 
         // Setup audio element
         const audio = new Audio(audioDataUrl);
+        audio.volume = Math.min(1, Math.max(0, volumeRef.current / 100));
         currentAudioRef.current = audio;
         let isFinished = false;
 

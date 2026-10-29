@@ -27,7 +27,10 @@
       "baseUrl": "基础URL",
       "imageCompressionQuality": "图片压缩质量",
       "imageMaxWidth": "图片最大宽度",
-      "showPetSubtitle": "桌宠模式下在角色下方显示小字幕"
+      "showPetSubtitle": "桌宠模式下在角色下方显示小字幕",
+      "volume": "语音音量",
+      "petModelSize": "桌宠模式下的角色大小 (%)",
+      "petModelSizeDesc": "100% 为模型原始大小。在桌宠模式下滚动鼠标滚轮也会改变此值，并保存到下次。"
     },
     "live2d": {
       "pointerInteractive": "鼠标交互",
@@ -45,7 +48,9 @@
       "negativeSpeechThreshold": "负面语音阈值",
       "negativeSpeechThresholdDesc": "停止语音检测的置信度下限(0-100)，数值越低检测越不敏感",
       "redemptionFrames": "验证帧数",
-      "redemptionFramesDesc": "确认语音检测所需的连续帧数(1-100)，数值越高越能减少噪音触发"
+      "redemptionFramesDesc": "确认语音检测所需的连续帧数(1-100)，数值越高越能减少噪音触发",
+      "micOnStartup": "打开应用时开启麦克风",
+      "micOnStartupDesc": "连接后自动开启麦克风。关闭后应用启动时麦克风保持关闭。"
     },
     "agent": {
       "allowProactiveSpeak": "允许AI主动发言",
