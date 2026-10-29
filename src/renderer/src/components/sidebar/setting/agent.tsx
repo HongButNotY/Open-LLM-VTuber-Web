@@ -17,10 +17,40 @@ function Agent({ onSave, onCancel }: AgentProps): JSX.Element {
     handleAllowProactiveSpeakChange,
     handleIdleSecondsChange,
     handleAllowButtonTriggerChange,
+    handleRandomSpeakChange,
+    handleRandomMinChange,
+    handleRandomMaxChange,
   } = useAgentSettings({ onSave, onCancel });
 
   return (
     <Stack {...settingStyles.common.container}>
+      <SwitchField
+        label={t('settings.agent.randomSpeakOnScreenShare')}
+        checked={settings.randomSpeakOnScreenShare}
+        onChange={handleRandomSpeakChange}
+      />
+
+      {settings.randomSpeakOnScreenShare && (
+        <>
+          <NumberField
+            label={t('settings.agent.randomMinMinutes')}
+            value={settings.randomMinMinutes}
+            onChange={(value) => handleRandomMinChange(Number(value))}
+            min={0.5}
+            step={0.5}
+            allowMouseWheel
+          />
+          <NumberField
+            label={t('settings.agent.randomMaxMinutes')}
+            value={settings.randomMaxMinutes}
+            onChange={(value) => handleRandomMaxChange(Number(value))}
+            min={0.5}
+            step={0.5}
+            allowMouseWheel
+          />
+        </>
+      )}
+
       <SwitchField
         label={t('settings.agent.allowProactiveSpeak')}
         checked={settings.allowProactiveSpeak}

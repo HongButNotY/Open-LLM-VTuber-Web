@@ -53,5 +53,3 @@ publish:
   provider: github
   releaseType: release
   publishAutoUpdate: false
-electronDownload:
-  mirror: https://npmmirror.com/mirrors/electron/

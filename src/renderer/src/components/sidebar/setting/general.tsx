@@ -1,5 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { useTranslation } from "react-i18next";
+import { useSubtitle } from "@/context/subtitle-context";
 import { Stack, createListCollection } from "@chakra-ui/react";
 import { useBgUrl } from "@/context/bgurl-context";
 import { settingStyles } from "./setting-styles";
@@ -49,6 +50,7 @@ const useCollections = () => {
 
 function General({ onSave, onCancel }: GeneralProps): JSX.Element {
   const { t, i18n } = useTranslation();
+  const { showPetSubtitle, setShowPetSubtitle } = useSubtitle();
   const bgUrlContext = useBgUrl();
   const { confName, setConfName } = useConfig();
   const { wsUrl, setWsUrl, baseUrl, setBaseUrl } = useWebSocket();
@@ -97,6 +99,12 @@ function General({ onSave, onCancel }: GeneralProps): JSX.Element {
         label={t("settings.general.showSubtitle")}
         checked={showSubtitle}
         onChange={setShowSubtitle}
+      />
+
+      <SwitchField
+        label={t("settings.general.showPetSubtitle")}
+        checked={showPetSubtitle}
+        onChange={setShowPetSubtitle}
       />
 
       {!settings.useCameraBackground && (

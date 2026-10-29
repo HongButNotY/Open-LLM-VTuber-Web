@@ -26,7 +26,8 @@
       "wsUrl": "WebSocket地址",
       "baseUrl": "基础URL",
       "imageCompressionQuality": "图片压缩质量",
-      "imageMaxWidth": "图片最大宽度"
+      "imageMaxWidth": "图片最大宽度",
+      "showPetSubtitle": "桌宠模式下在角色下方显示小字幕"
     },
     "live2d": {
       "pointerInteractive": "鼠标交互",
@@ -49,7 +50,10 @@
     "agent": {
       "allowProactiveSpeak": "允许AI主动发言",
       "idleSecondsToSpeak": "空闲多少秒后AI可发言",
-      "allowButtonTrigger": "通过举手按钮提示AI发言"
+      "allowButtonTrigger": "通过举手按钮提示AI发言",
+      "randomSpeakOnScreenShare": "屏幕共享时随机主动发言",
+      "randomMinMinutes": "最短等待（分钟）",
+      "randomMaxMinutes": "最长等待（分钟）"
     },
     "about": {
       "title": "Open LLM VTuber 前端",
@@ -131,4 +135,4 @@
     "connecting": "连接中",
     "clickToReconnect": "点击重新连接"
   }
-} 
+}

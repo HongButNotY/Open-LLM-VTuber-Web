@@ -1,6 +1,7 @@
 import {
   createContext, useState, useMemo, useContext, memo,
 } from 'react';
+import { useLocalStorage } from '@/hooks/utils/use-local-storage';
 
 /**
  * Subtitle context state interface
@@ -18,6 +19,12 @@ interface SubtitleState {
 
   /** Toggle subtitle visibility */
   setShowSubtitle: (show: boolean) => void
+
+  /** Whether to show the small subtitle under the character in pet mode */
+  showPetSubtitle: boolean
+
+  /** Toggle the pet-mode subtitle (saved between launches) */
+  setShowPetSubtitle: (show: boolean) => void
 }
 
 /**
@@ -44,6 +51,7 @@ export const SubtitleProvider = memo(({ children }: { children: React.ReactNode 
   // State management
   const [subtitleText, setSubtitleText] = useState<string>(DEFAULT_SUBTITLE.text);
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
+  const [showPetSubtitle, setShowPetSubtitle] = useLocalStorage<boolean>('showPetSubtitle', true);
 
   // Memoized context value
   const contextValue = useMemo(
@@ -52,8 +60,10 @@ export const SubtitleProvider = memo(({ children }: { children: React.ReactNode 
       setSubtitleText,
       showSubtitle,
       setShowSubtitle,
+      showPetSubtitle,
+      setShowPetSubtitle,
     }),
-    [subtitleText, showSubtitle],
+    [subtitleText, showSubtitle, showPetSubtitle, setShowPetSubtitle],
   );
 
   return (

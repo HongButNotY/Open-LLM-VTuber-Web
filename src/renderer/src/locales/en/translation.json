@@ -28,7 +28,8 @@
       "imageCompressionQuality": "Image Compression Quality",
       "imageCompressionQualityPlaceholder": "Enter compression quality (0-100)",
       "imageMaxWidth": "Image Max Width",
-      "imageMaxWidthPlaceholder": "Enter maximum width in pixels"
+      "imageMaxWidthPlaceholder": "Enter maximum width in pixels",
+      "showPetSubtitle": "Small subtitle under her in pet mode"
     },
     "live2d": {
       "pointerInteractive": "Pointer Interactive",
@@ -51,7 +52,10 @@
     "agent": {
       "allowProactiveSpeak": "Allow AI to Speak Proactively",
       "idleSecondsToSpeak": "Idle seconds allow AI to speak",
-      "allowButtonTrigger": "Prompt AI to Speak via Raise Hand Button"
+      "allowButtonTrigger": "Prompt AI to Speak via Raise Hand Button",
+      "randomSpeakOnScreenShare": "Speak up at random times while screen capture is on",
+      "randomMinMinutes": "Shortest wait (minutes)",
+      "randomMaxMinutes": "Longest wait (minutes)"
     },
     "about": {
       "title": "Open LLM VTuber Frontend",
@@ -134,4 +138,4 @@
     "connecting": "Connecting",
     "clickToReconnect": "Click to Reconnect"
   }
-} 
+}

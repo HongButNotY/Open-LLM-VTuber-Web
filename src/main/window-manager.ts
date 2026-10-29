@@ -71,6 +71,9 @@ export class WindowManager {
         sandbox: false,
         contextIsolation: true,
         nodeIntegration: true,
+        // Keep timers running at full speed when the pet isn't the focused app,
+        // so she still speaks up on her own while you work in other windows.
+        backgroundThrottling: false,
       },
       hasShadow: false,
       paintWhenInitiallyHidden: true,
