@@ -30,7 +30,8 @@
       "showPetSubtitle": "桌宠模式下在角色下方显示小字幕",
       "volume": "语音音量",
       "petModelSize": "桌宠模式下的角色大小 (%)",
-      "petModelSizeDesc": "100% 为模型原始大小。在桌宠模式下滚动鼠标滚轮也会改变此值，并保存到下次。"
+      "petModelSizeDesc": "100% 为模型原始大小。在桌宠模式下滚动鼠标滚轮也会改变此值，并保存到下次。",
+      "volumeDesc": "超过 100% 会比原始音量更大。数值过高可能会失真。"
     },
     "live2d": {
       "pointerInteractive": "鼠标交互",

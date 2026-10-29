@@ -32,7 +32,8 @@
       "showPetSubtitle": "Small subtitle under her in pet mode",
       "volume": "Voice volume",
       "petModelSize": "Her size in pet mode (%)",
-      "petModelSizeDesc": "100% is the model's normal size. Scrolling on her in pet mode also changes this, and it is saved for next time."
+      "petModelSizeDesc": "100% is the model's normal size. Scrolling on her in pet mode also changes this, and it is saved for next time.",
+      "volumeDesc": "Above 100% makes her louder than the recording. Very high values can sound distorted."
     },
     "live2d": {
       "pointerInteractive": "Pointer Interactive",

@@ -17,6 +17,43 @@ import * as LAppDefine from '../../../WebSDK/src/lappdefine';
 // Simple type alias for Live2D model
 type Live2DModel = any;
 
+// Shared audio graph so her voice can be boosted above 100%
+// (an <audio> element's own volume stops at 100%).
+let voiceAudioContext: AudioContext | null = null;
+
+/**
+ * Route an audio element through a gain node and return it.
+ * Returns null if Web Audio isn't available; the caller then falls back to audio.volume.
+ */
+function createVoiceGain(audio: HTMLAudioElement): GainNode | null {
+  try {
+    voiceAudioContext ??= new AudioContext();
+    // A suspended context would play nothing; use plain volume this time and wake it for next time.
+    if (voiceAudioContext.state !== 'running') {
+      voiceAudioContext.resume();
+      return null;
+    }
+    const source = voiceAudioContext.createMediaElementSource(audio);
+    const gain = voiceAudioContext.createGain();
+    source.connect(gain).connect(voiceAudioContext.destination);
+    return gain;
+  } catch (error) {
+    console.warn('Volume boost unavailable, using normal volume:', error);
+    return null;
+  }
+}
+
+/** Apply a 0-300% volume to the voice, using the gain node when there is one. */
+function applyVoiceVolume(audio: HTMLAudioElement, gain: GainNode | null, percent: number) {
+  const level = Math.max(0, percent) / 100;
+  if (gain) {
+    audio.volume = 1;
+    gain.gain.value = level;
+  } else {
+    audio.volume = Math.min(1, level);
+  }
+}
+
 interface AudioTaskOptions {
   audioBase64: string
   volumes: number[]
@@ -51,6 +88,7 @@ export const useAudioTask = () => {
 
   // Track current audio and model
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const currentGainRef = useRef<GainNode | null>(null);
   const currentModelRef = useRef<Live2DModel | null>(null);
 
   stateRef.current = {
@@ -62,7 +100,9 @@ export const useAudioTask = () => {
 
   // Apply volume changes to the line she's saying right now, too.
   useEffect(() => {
-    if (currentAudioRef.current) currentAudioRef.current.volume = volume / 100;
+    if (currentAudioRef.current) {
+      applyVoiceVolume(currentAudioRef.current, currentGainRef.current, volume);
+    }
   }, [volume]);
 
   /**
@@ -191,8 +231,10 @@ export const useAudioTask = () => {
 
         // Setup audio element
         const audio = new Audio(audioDataUrl);
-        audio.volume = Math.min(1, Math.max(0, volumeRef.current / 100));
+        const gain = createVoiceGain(audio);
+        applyVoiceVolume(audio, gain, volumeRef.current);
         currentAudioRef.current = audio;
+        currentGainRef.current = gain;
         let isFinished = false;
 
         const cleanup = () => {

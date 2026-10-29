@@ -113,7 +113,10 @@ function General({ onSave, onCancel }: GeneralProps): JSX.Element {
         label={t("settings.general.volume")}
         value={volume}
         onChange={setVolume}
+        max={300}
+        step={5}
         unit="%"
+        help={t("settings.general.volumeDesc")}
       />
 
       <SwitchField
